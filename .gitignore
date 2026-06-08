@@ -1,0 +1,37 @@
+local_files*
+.claude*
+
+
+.venv*
+.env*
+.env.local
+!frontend/.env.local.example
+__pycache__/
+**/__pycache__/
+*.pyc
+sagemaker_deploy/active_endpoint.json
+
+*/node_modules*
+cdk.out*
+.vscode*
+
+# Frontend build + local config
+frontend/.env
+frontend/.env.local
+frontend/dist/
+
+# Build artifacts
+*.tar.gz
+*.zip
+
+# drawio autosaves and personal working files
+*.drawio.bkp
+.$*.drawio.bkp
+*_my_edits.*
+
+# OS / editor
+.DS_Store
+.idea/
+*.swp
+
+SPARK*

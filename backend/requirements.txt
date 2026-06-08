@@ -1,0 +1,2 @@
+# boto3 is included in Lambda runtime — no need to package it
+# Only add if you need extra libraries

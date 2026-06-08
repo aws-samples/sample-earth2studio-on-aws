@@ -1,0 +1,29 @@
+# Dependencies for FourCastNet v3 (FCN3) model.
+# Installed INSIDE the SageMaker PyTorch 2.6.0 / Python 3.12 DLC container.
+#
+# FCN3 uses spherical harmonics (torch-harmonics) and the makani model loader.
+# torch-harmonics PyPI wheel works but without CUDA extensions (float32 fallback).
+# For full bfloat16 performance, use a custom BYOC container with CUDA-compiled
+# torch-harmonics (see local_files/earth2-eks-inference/container/Dockerfile).
+
+# NVIDIA Earth2Studio
+earth2studio>=0.3.0,<1.0.0
+
+# Zarr — used by Earth2Studio's ZarrBackend for IO
+zarr>=3.0.0
+
+# Scientific data handling
+xarray>=2024.1.0
+netCDF4>=1.6.0
+
+# FCN3-specific dependencies
+# torch-harmonics: PyPI wheel (no CUDA extension, FCN3 auto-detects and uses float32)
+torch-harmonics>=0.8.0
+
+# makani: NVIDIA model loader — not on PyPI, must install from GitHub
+# Pinned to the commit used by earth2studio's pyproject.toml
+makani @ git+https://github.com/NVIDIA/makani.git@b38fcb2799d7dbc146fa60459f3f9823394a8bf1
+
+# Additional FCN3 extras from earth2studio[fcn3]
+ruamel.yaml>=0.18.14
+scipy>=1.10.0

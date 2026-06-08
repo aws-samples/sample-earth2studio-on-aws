@@ -1,0 +1,27 @@
+# Dependencies for the DLWP model.
+# Installed INSIDE the SageMaker PyTorch 2.6.0 / Python 3.12 DLC container.
+#
+# The PyTorch DLC already includes: torch, numpy, scipy
+#
+# Version pins explained:
+#   earth2studio        — 0.13.x is the last release compatible with
+#                         physicsnemo 1.x. 0.14.x requires physicsnemo 2.x.
+#   nvidia-physicsnemo  — 2.0.0 introduced an import of `warp.context` that
+#                         is incompatible with current warp-lang. Pin <2.0.
+#   warp-lang           — Recent 1.10+ releases removed/renamed `warp.context`,
+#                         which physicsnemo 2.x depends on. Pin to the
+#                         pre-rename line for safety.
+
+# NVIDIA Earth2Studio
+earth2studio>=0.3.0,<0.14.0
+
+# Zarr — used by Earth2Studio's ZarrBackend for IO
+zarr>=3.0.0
+
+# Scientific data handling
+xarray>=2024.1.0
+netCDF4>=1.6.0
+
+# NVIDIA PhysicsNeMo — required by DLWP
+nvidia-physicsnemo>=1.0.0,<2.0.0
+warp-lang>=1.5.0,<1.10.0

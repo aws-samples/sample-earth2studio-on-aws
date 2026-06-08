@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Earth2Studio Weather Forecast</title>
+  </head>
+  <body class="bg-dark-950 text-dark-100">
+    <div id="root"></div>
+    <!-- Polyfill for amazon-cognito-identity-js (needs global + Buffer) -->
+    <script>
+      if (typeof global === "undefined") { window.global = window; }
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,34 @@
+version: 0.2
+
+# AWS_ACCOUNT_ID and AWS_DEFAULT_REGION are derived from the CodeBuild
+# execution environment, so this buildspec works in any AWS account
+# without code changes.
+env:
+  variables:
+    ECR_REPO_NAME: "earth2-fcn3"
+    IMAGE_TAG: "latest"
+  secrets-manager:
+    NGC_API_KEY: "/earth2/ngc-api-key"
+
+phases:
+  pre_build:
+    commands:
+      - AWS_ACCOUNT_ID=$(echo "$CODEBUILD_BUILD_ARN" | cut -d':' -f5)
+      - echo "Building in account $AWS_ACCOUNT_ID region $AWS_DEFAULT_REGION"
+      - echo "Logging into NGC (NVIDIA GPU Cloud) for base image..."
+      - echo "$NGC_API_KEY" | docker login nvcr.io -u '$oauthtoken' --password-stdin
+      - echo "Logging into ECR (our repo)..."
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+      - ECR_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$ECR_REPO_NAME
+  build:
+    commands:
+      - echo "Building FCN3 container (NGC base + SageMaker serving stack)..."
+      - echo "This takes ~20-30 min for CUDA compilation of torch-harmonics"
+      - cd sagemaker_deploy/container_fcn3
+      - docker build -t $ECR_REPO_NAME:$IMAGE_TAG .
+  post_build:
+    commands:
+      - echo "Tagging and pushing to ECR..."
+      - docker tag $ECR_REPO_NAME:$IMAGE_TAG $ECR_URI:$IMAGE_TAG
+      - docker push $ECR_URI:$IMAGE_TAG
+      - echo "✅ FCN3 container pushed to $ECR_URI:$IMAGE_TAG"

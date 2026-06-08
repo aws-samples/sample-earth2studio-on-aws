@@ -1,0 +1,39 @@
+#!/bin/bash
+# SageMaker BYOC entrypoint script.
+#
+# SageMaker calls this script to start the inference server.
+# It launches gunicorn with the Flask app that implements:
+#   GET  /ping          → health check (200 OK)
+#   POST /invocations   → inference
+#   Listening on port 8080
+#
+# SageMaker extracts model.tar.gz into /opt/ml/model/ before calling serve.
+# The model.tar.gz contains:
+#   code/inference.py       — the handler (model_fn/input_fn/predict_fn/output_fn)
+#   code/requirements.txt   — extra pip deps (installed below)
+#   model_config.json       — model class/import path config
+
+set -e
+
+echo "=== SageMaker BYOC Serve Script ==="
+echo "Starting at $(date)"
+
+# Install any extra requirements from model.tar.gz (if present)
+if [ -f /opt/ml/model/code/requirements.txt ]; then
+    echo "Installing model code requirements..."
+    pip install --no-cache-dir -r /opt/ml/model/code/requirements.txt 2>&1 || true
+fi
+
+# Start gunicorn with the Flask app
+# - bind to 0.0.0.0:8080 (SageMaker contract)
+# - 1 worker (weather models use full GPU, no parallelism)
+# - timeout 600s (weather forecasts can take several minutes)
+# - preload to load the model once in the master process
+echo "Starting gunicorn on port 8080..."
+exec gunicorn \
+    --bind 0.0.0.0:8080 \
+    --workers 1 \
+    --timeout 600 \
+    --access-logfile - \
+    --error-logfile - \
+    sagemaker_serve:app

@@ -19,9 +19,9 @@
 #
 # Cost Warning:
 #   DLWP:    ml.g5.2xlarge  ~$1.52/hr  (24GB A10G)
-#   FCN3:    ml.g7e.2xlarge ~$2.80/hr  (96GB RTX PRO Server 6000)
+#   FCN3:    ml.g7e.2xlarge ~$4.20/hr  (96GB RTX PRO Server 6000)
 #   ─────────────────────────────────
-#   Total:                  ~$4.32/hr (~$104/day)
+#   Total:                  ~$5.72/hr (~$137/day)
 #
 #   DELETE ENDPOINTS WHEN DONE! Run: ./deploy-all.sh --delete
 #
@@ -137,7 +137,7 @@ deploy_all() {
         echo -e "${RED}⚠️  ${FAILED}/${#MODELS[@]} deployments failed.${NC}"
     fi
     echo ""
-    echo -e "${YELLOW}💰 IMPORTANT: These endpoints cost ~\$4.32/hr total.${NC}"
+    echo -e "${YELLOW}💰 IMPORTANT: These endpoints cost ~\$5.72/hr total.${NC}"
     echo -e "${YELLOW}   Delete when done: ./deploy-all.sh --delete${NC}"
 }
 

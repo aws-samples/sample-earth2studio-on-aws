@@ -13,9 +13,9 @@ This sample only ships **Apache-2.0-licensed** weather models. Other models expo
 | Model | Class | Instance | GPU | VRAM | Cost/hr | License |
 |---|---|---|---|---|---|---|
 | DLWP | `DLWP` | `ml.g5.2xlarge` | A10G | 24 GB | ~$1.52 | Apache-2.0 |
-| **FCN3** | `FCN3` | `ml.g7e.2xlarge` | RTX PRO Server 6000 | 96 GB | ~$2.80 | Apache-2.0 |
+| **FCN3** | `FCN3` | `ml.g7e.2xlarge` | RTX PRO Server 6000 | 96 GB | ~$4.20 | Apache-2.0 |
 
-**Total: ~$4.32/hr (~$104/day) when both endpoints are running.**
+**Total: ~$5.72/hr (~$137/day) when both endpoints are running.**
 
 ## Quick Start
 

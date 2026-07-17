@@ -1,6 +1,8 @@
 # Run your own global AI weather forecast on AWS with NVIDIA Earth2Studio, Amazon SageMaker, and AWS CDK
 
 > **Source repository:** <https://github.com/aws-samples/sample-earth2studio-on-aws>
+>
+> **Read the story behind this sample on AWS Builder Center:** [Run Your Own Global AI Weather Forecast on AWS with NVIDIA Earth2Studio, Amazon SageMaker, and AWS CDK](https://builder.aws.com/content/3Gah0cu3X9uM8Egx10Dhf5Urmoz/run-your-own-global-ai-weather-forecast-on-aws-with-nvidia-earth2studio-amazon-sagemaker-and-aws-cdk) — the problem it solves, the architecture decisions, and the lessons we learned building it.
 
 Accurate global weather forecasts sit underneath almost every part of the modern economy — aviation routing, energy trading, grid operations, agriculture, shipping, emergency response, insurance pricing, and the morning news all depend on knowing what the atmosphere will look like six hours, one day, or ten days from now. For roughly 50 years, the only way to produce that forecast was **Numerical Weather Prediction (NWP)** — discretizing the atmosphere into a 3-D grid and numerically solving the conservation equations of mass, momentum, and energy at every grid cell, every few seconds of simulated time, for ten simulated days. Operational NWP models such as NOAA’s **GFS**, ECMWF’s **IFS**, and the UK Met Office’s **UM** routinely cost tens of thousands of CPU-hours per forecast cycle and run on dedicated supercomputers that cost national meteorological centers hundreds of millions of dollars per year.
 

@@ -75,7 +75,7 @@ By the end of this walkthrough you will have, **in your own AWS account**, a com
 
 1. **An inference layer** — two prognostic ML models, each on its own SageMaker asynchronous-inference endpoint:
    - **DLWP** on `ml.g5.2xlarge` (24 GB A10G GPU, ~$1.52/hr) — a fast, low-resolution baseline.
-   - **FCN3** (FourCastNet v3) on `ml.g7e.2xlarge` (96 GB Blackwell RTX PRO 6000 GPU, ~$2.80/hr) — operational-grade, 0.25° global, 72 atmospheric variables.
+   - **FCN3** (FourCastNet v3) on `ml.g7e.2xlarge` (96 GB Blackwell RTX PRO 6000 GPU, ~$4.20/hr) — operational-grade, 0.25° global, 72 atmospheric variables.
    - Both endpoints automatically fetch initial conditions from NOAA’s GFS analysis (no API key required) and return both a downsampled JSON summary for the UI and the full-resolution NumPy archive on Amazon S3 for scientists to download.
 2. **An application layer** — a secured Web UI:
    - Amazon CloudFront distribution with TLS 1.2 minimum.
@@ -113,8 +113,8 @@ There are two cost lines to track:
 |---|---|---|
 | **CDK long-lived infra** (CloudFront, Lambda, S3, Cognito, AWS WAF, API Gateway) | **~$5–10 / month** total | Always on |
 | **DLWP endpoint** (`ml.g5.2xlarge`) | **~$1.52 / hr** | On-demand only |
-| **FCN3 endpoint** (`ml.g7e.2xlarge`) | **~$2.80 / hr** | On-demand only |
-| **Combined (both endpoints up)** | **~$4.32 / hr ≈ $104 / day** | On-demand only |
+| **FCN3 endpoint** (`ml.g7e.2xlarge`) | **~$4.20 / hr** | On-demand only |
+| **Combined (both endpoints up)** | **~$5.72 / hr ≈ $137 / day** | On-demand only |
 
 > ⚠️ **GPU endpoints are billed per second they exist, not per inference call.** A SageMaker async endpoint with 0 % utilization still costs you the full hourly rate. Always run `./deploy-all.sh --delete` when you’re done experimenting.
 
@@ -204,6 +204,10 @@ cd sample-earth2studio-on-aws
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements-cdk.txt
+
+# Dependencies for the SageMaker deploy/invoke scripts used in Steps 9–10
+# (boto3, sagemaker, numpy, xarray)
+pip install -r sagemaker_deploy/requirements.txt
 
 # Node.js dependencies for the React frontend.
 # The first `npm run build` is required because the CDK app references
@@ -412,7 +416,7 @@ When complete, the image is at `<account>.dkr.ecr.<region>.amazonaws.com/earth2-
 
 ### Step 9 — Deploy SageMaker endpoints
 
-⚠️ **GPU instances are expensive — about $4.32/hr if both endpoints are running.** Always run `--delete` when you’re done.
+⚠️ **GPU instances are expensive — about $5.72/hr if both endpoints are running.** Always run `--delete` when you’re done.
 
 ```bash
 cd sagemaker_deploy
@@ -535,7 +539,7 @@ cd sagemaker_deploy
 | Resource | Cost | Lifecycle |
 |---|---|---|
 | CDK infrastructure (CloudFront, Lambda, S3, etc.) | ~$5–10 / month | Always on (minimal) |
-| SageMaker endpoints (DLWP + FCN3) | **~$4.32 / hr** | On-demand only |
+| SageMaker endpoints (DLWP + FCN3) | **~$5.72 / hr** | On-demand only |
 
 `./deploy-all.sh --delete` removes the SageMaker endpoints; the rest of the infra (S3 bucket, Cognito, CloudFront) keeps running cheaply. To take everything down, destroy the stacks in **reverse order** of creation, because `Earth2UI` imports the model bucket from `Earth2SageMaker`:
 

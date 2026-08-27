@@ -1,0 +1,72 @@
+# Dependabot configuration.
+#
+# Only the npm project under frontend/ is watched. The other dependency
+# surfaces in this repository are left out deliberately, and the reasons are
+# recorded at the bottom of this file so a future reader does not assume they
+# were simply forgotten.
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+      day: monday
+
+    # The groups below exist to keep related updates in ONE pull request.
+    # Ungrouped, Dependabot opens a PR per package, and each one rewrites the
+    # same shared package-lock.json from the same base commit — so merging the
+    # first invalidates the others and they conflict. That is not theoretical:
+    # the nanoid and postcss PRs collided here, because nanoid is postcss's own
+    # dependency and the two bumps edit overlapping regions of the lockfile.
+    groups:
+      # Security fixes travel together, so one advisory batch is one review.
+      npm-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
+
+      # Routine bumps are split by whether the code reaches a browser.
+      # A production bump changes the shipped bundle and warrants a sign-in
+      # and render check; a devDependency bump only has to keep the build
+      # (`tsc && vite build`) green.
+      npm-production:
+        applies-to: version-updates
+        dependency-type: production
+        patterns:
+          - "*"
+
+      npm-development:
+        applies-to: version-updates
+        dependency-type: development
+        patterns:
+          - "*"
+
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore(deps)
+      prefix-development: chore(deps-dev)
+
+# Deliberately not watched:
+#
+#   pip — requirements-cdk.txt, sagemaker_deploy/**/requirements.txt
+#     There is no Python lockfile in this repository, only ">=" ranges, so
+#     Dependabot cannot resolve the concrete installed versions that security
+#     alerts key off. What it would do instead is raise upper bounds that are
+#     deliberate and documented where they are declared: earth2studio <0.14.0,
+#     nvidia-physicsnemo <2.0.0 and warp-lang <1.10.0 each cap a version known
+#     to break the inference containers, cdk-nag is pinned to a single version,
+#     and makani is pinned to the git commit earth2studio itself pins. Those
+#     ceilings are the point, and a bot has no way to know that.
+#
+#   docker — sagemaker_deploy/container_fcn3/Dockerfile,
+#            sagemaker_deploy/container_fcn3_dlc/Dockerfile
+#     Both base images live in registries Dependabot holds no credentials for:
+#     nvcr.io requires an NGC API key, and the AWS Deep Learning Container is
+#     in another account's ECR. The DLC tag also encodes a whole compatibility
+#     matrix (torch / CUDA / Python / Ubuntu) that cannot be bumped one axis at
+#     a time.
+#
+#   github-actions
+#     There are no workflows in this repository yet. Add an entry here when the
+#     first one lands, since action versions are a real supply-chain surface.

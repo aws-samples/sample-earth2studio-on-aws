@@ -10,16 +10,16 @@
   },
   "dependencies": {
     "amazon-cognito-identity-js": "^6.3.16",
-    "plotly.js": "^2.35.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-globe.gl": "^2.37.1",
-    "react-plotly.js": "^2.6.0",
-    "three": "^0.183.2"
+    "plotly.js": "^3.7.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-globe.gl": "^2.38.0",
+    "react-plotly.js": "^4.1.0",
+    "three": "^0.185.1"
   },
   "devDependencies": {
-    "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.1",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.5",
     "@types/react-plotly.js": "^2.6.3",
     "@vitejs/plugin-react": "^6.0.2",
     "autoprefixer": "^10.4.20",

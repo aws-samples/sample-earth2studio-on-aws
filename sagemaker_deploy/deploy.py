@@ -61,6 +61,11 @@ from config import (
     PYTHON_VERSION,
 )
 
+# Add the repository root for solution.py, which attaches the AWS Solution
+# user-agent suffix to every client built here.
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from solution import get_client, user_agent_string  # noqa: E402
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -170,7 +175,7 @@ def get_sagemaker_role(args):
 
     # Try to find a SageMaker role via IAM
     try:
-        iam = boto3.client("iam", region_name=args.region)
+        iam = get_client("iam", region_name=args.region)
         paginator = iam.get_paginator("list_roles")
         for page in paginator.paginate():
             for r in page["Roles"]:
@@ -197,7 +202,11 @@ def get_s3_bucket(args):
         # bucket configured for this account/region), we fall through to the
         # explicit error message below.
         try:
-            sess = sagemaker.Session(boto_session=boto3.Session(region_name=args.region))
+            boto_session = boto3.Session(region_name=args.region)
+            sess = sagemaker.Session(
+                boto_session=boto_session,
+                sagemaker_client=get_client("sagemaker", session=boto_session),
+            )
             bucket = sess.default_bucket()
             logger.info(f"Using default SageMaker bucket: {bucket}")
             return bucket
@@ -319,7 +328,7 @@ def upload_to_s3(tar_path, bucket, model_name, region):
 
     logger.info(f"Uploading model artifacts to {s3_uri}")
 
-    s3_client = boto3.client("s3", region_name=region)
+    s3_client = get_client("s3", region_name=region)
     s3_client.upload_file(tar_path, bucket, s3_key)
 
     logger.info("Upload complete")
@@ -363,7 +372,15 @@ def deploy_model(args):
         #
         # Reference: https://sagemaker.readthedocs.io/en/stable/frameworks/pytorch/using_pytorch.html
         boto_session = boto3.Session(region_name=args.region)
-        sagemaker_session = sagemaker.Session(boto_session=boto_session)
+        # Hand the SDK pre-built clients so the SageMaker API calls it makes on
+        # our behalf carry the solution user-agent suffix (see solution.py).
+        sagemaker_session = sagemaker.Session(
+            boto_session=boto_session,
+            sagemaker_client=get_client("sagemaker", session=boto_session),
+            sagemaker_runtime_client=get_client(
+                "sagemaker-runtime", session=boto_session
+            ),
+        )
 
         # Common environment variables for all models. The inference handler
         # uses S3_BUCKET / AWS_REGION to upload full-resolution forecast data.
@@ -378,6 +395,10 @@ def deploy_model(args):
             "SAGEMAKER_MODEL_SERVER_WORKERS": "1",
             "S3_BUCKET": S3_BUCKET,
             "AWS_REGION": AWS_REGION,
+            # The inference handler runs inside the container with no checkout
+            # to import solution.py from, so the token is injected here and
+            # read back from the environment (see model_code_*/inference.py).
+            "USER_AGENT_STRING": user_agent_string(),
         }
 
         # Resolve container URI — support variant selection for BYOC models.
@@ -506,7 +527,7 @@ def delete_endpoint(args):
         sys.exit(1)
 
     logger.info(f"Deleting endpoint: {endpoint_name}")
-    sm_client = boto3.client("sagemaker", region_name=args.region)
+    sm_client = get_client("sagemaker", region_name=args.region)
 
     try:
         # Get endpoint config and model names for cleanup

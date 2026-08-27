@@ -15,6 +15,7 @@ import uuid
 from urllib.parse import urlparse
 
 import boto3
+from botocore.config import Config
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -31,6 +32,13 @@ if not REGION:
 if not S3_BUCKET:
     raise RuntimeError("S3_BUCKET environment variable is required.")
 
+# AWS Solution user-agent attribution. The deployed Lambda asset is backend/
+# alone, so there is no checkout here to import solution.py from — the token is
+# read from USER_AGENT_STRING, which stacks/ui_stack.py injects into the
+# function environment. Unset (e.g. running under backend/local_server.py) just
+# means calls go out unlabelled; it must never raise.
+BOTO_CONFIG = Config(user_agent_extra=os.environ.get("USER_AGENT_STRING", ""))
+
 # Clients (reused across warm invocations)
 _sm_client = None
 _sm_runtime = None
@@ -40,21 +48,24 @@ _s3_client = None
 def _sagemaker():
     global _sm_client
     if _sm_client is None:
-        _sm_client = boto3.client("sagemaker", region_name=REGION)
+        _sm_client = boto3.client("sagemaker", region_name=REGION,
+                                  config=BOTO_CONFIG)
     return _sm_client
 
 
 def _sagemaker_runtime():
     global _sm_runtime
     if _sm_runtime is None:
-        _sm_runtime = boto3.client("sagemaker-runtime", region_name=REGION)
+        _sm_runtime = boto3.client("sagemaker-runtime", region_name=REGION,
+                                   config=BOTO_CONFIG)
     return _sm_runtime
 
 
 def _s3():
     global _s3_client
     if _s3_client is None:
-        _s3_client = boto3.client("s3", region_name=REGION)
+        _s3_client = boto3.client("s3", region_name=REGION,
+                                  config=BOTO_CONFIG)
     return _s3_client
 
 

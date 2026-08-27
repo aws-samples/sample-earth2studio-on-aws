@@ -460,7 +460,19 @@ def predict_fn(request, model_dict):
                 s3_key = f"earth2-weather-models/full-res/{date_str[:10]}_{model_class_name}_{forecast_id}.npz"
 
                 import boto3 as _boto3
-                _s3 = _boto3.client("s3", region_name=os.environ.get("AWS_REGION"))
+                from botocore.config import Config as _Config
+
+                # This handler runs inside the SageMaker container, with no
+                # checkout to import solution.py from, so the AWS Solution
+                # user-agent token comes from USER_AGENT_STRING — injected into
+                # the model environment by sagemaker_deploy/deploy.py.
+                _s3 = _boto3.client(
+                    "s3",
+                    region_name=os.environ.get("AWS_REGION"),
+                    config=_Config(
+                        user_agent_extra=os.environ.get("USER_AGENT_STRING", "")
+                    ),
+                )
                 _s3.put_object(Bucket=s3_bucket, Key=s3_key, Body=buf.getvalue(), ContentType="application/octet-stream")
 
                 result["full_res_s3"] = f"s3://{s3_bucket}/{s3_key}"

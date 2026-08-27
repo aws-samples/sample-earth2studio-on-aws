@@ -42,6 +42,8 @@ from aws_cdk import (
 from cdk_nag import AwsSolutionsChecks, NagSuppressions
 from constructs import Construct
 
+from solution import user_agent_string
+
 
 class UIStack(Stack):
     def __init__(
@@ -178,6 +180,10 @@ class UIStack(Stack):
                 "S3_BUCKET": model_bucket.bucket_name,
                 "S3_PREFIX": s3_prefix,
                 "REGION": self.region,
+                # The bundled asset is backend/ alone, with no solution.py to
+                # import, so the AWS Solution user-agent token is injected here
+                # and read back from the environment (see backend/handler.py).
+                "USER_AGENT_STRING": user_agent_string(),
             },
         )
 

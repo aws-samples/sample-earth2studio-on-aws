@@ -160,6 +160,34 @@ def test_env_var_overrides_the_config():
     assert solution.user_agent_string() == TOKEN
 
 
+def test_the_detached_pattern_reaches_the_wire():
+    """backend/handler.py and both model_code_*/inference.py cannot import this
+    module, so they build the Config from USER_AGENT_STRING themselves. That one
+    line carries most of this solution's runtime AWS traffic — the Lambda behind
+    the API and the inference containers — so assert it on the wire too, and
+    assert that an unset variable degrades quietly instead of raising.
+    """
+    from botocore.config import Config
+    prev = os.environ.get("USER_AGENT_STRING")
+    try:
+        os.environ["USER_AGENT_STRING"] = TOKEN
+        # verbatim the expression the three detached files use
+        config = Config(user_agent_extra=os.environ.get("USER_AGENT_STRING", ""))
+        client = _signed_session().client("sts", config=config)
+        assert _sent_user_agent(client).split().count(TOKEN) == 1
+
+        # unset (a developer running backend/local_server.py): no token, no raise
+        del os.environ["USER_AGENT_STRING"]
+        config = Config(user_agent_extra=os.environ.get("USER_AGENT_STRING", ""))
+        ua = _sent_user_agent(_signed_session().client("sts", config=config))
+        assert "AWSSOLUTION/" not in ua, ua
+    finally:
+        if prev is None:
+            os.environ.pop("USER_AGENT_STRING", None)
+        else:
+            os.environ["USER_AGENT_STRING"] = prev
+
+
 def test_stack_description_shape():
     """The no-component form is what the top-of-graph Earth2UI stack deploys."""
     desc = solution.stack_description()
@@ -345,6 +373,7 @@ if __name__ == "__main__":
                test_config_may_be_passed_positionally,
                test_a_positional_region_string_fails_at_the_boundary,
                test_env_var_overrides_the_config,
+               test_the_detached_pattern_reaches_the_wire,
                test_stack_description_shape,
                test_stack_description_with_a_component,
                test_id_suffix_keeps_one_bare_id_per_install,

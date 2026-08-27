@@ -12,8 +12,13 @@ sample-earth2studio-on-aws/
 ├── cdk.json                     # CDK configuration
 ├── setup.sh                     # One-time AWS creds check + NGC secret provision
 ├── requirements-cdk.txt         # CDK Python dependencies
+├── solution-config.json         # AWS Solution id/name/version — single source of truth
+├── solution.py                  # Its only reader: stack Description + SDK User-Agent
 │
 ├── docs/                        # Architecture diagrams (PNG/SVG/draw.io source) + UI screenshot
+│
+├── tests/                       # Unit tests
+│   └── test_solution.py         # Asserts the real outbound User-Agent + descriptions
 │
 ├── stacks/                      # CDK stack definitions
 │   ├── sagemaker_infra_stack.py # S3 bucket, IAM role, ECR, CodeBuild, SSM

@@ -1,0 +1,8 @@
+{
+  "solution": {
+    "_comment": "AWS Solution identity — the single source of truth for both reporting mechanisms: the CloudFormation stack Description (deployment counting) and the AWS SDK User-Agent suffix (API usage attribution). Not a per-run knob: bump 'version' when cutting a release and otherwise leave it alone. solution.py is the only reader and always reads THIS file, never a per-run override, so no other config can strip the identity. See solution.py for the exact formats and README.md ('Operational metrics') for what is collected and how to opt out.",
+    "id": "SO0366",
+    "name": "Deploy NVIDIA Earth2Studio on Amazon SageMaker",
+    "version": "v1.0.0"
+  }
+}

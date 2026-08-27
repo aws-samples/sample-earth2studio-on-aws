@@ -55,12 +55,13 @@ The architecture uses a **hybrid lifecycle**. The presentation layer (CloudFront
 6. [Configuration reference](#configuration-reference)
 7. [Project structure](#project-structure)
 8. [Security](#security)
-9. [Cleanup](#cleanup)
-10. [Local development](#local-development)
-11. [Troubleshooting](#troubleshooting)
-12. [Conclusion](#conclusion)
-13. [Authors](#authors)
-14. [License and model attribution](#license-and-model-attribution)
+9. [Operational metrics](#operational-metrics)
+10. [Cleanup](#cleanup)
+11. [Local development](#local-development)
+12. [Troubleshooting](#troubleshooting)
+13. [Conclusion](#conclusion)
+14. [Authors](#authors)
+15. [License and model attribution](#license-and-model-attribution)
 
 Deep-dive docs live alongside the main README:
 
@@ -524,6 +525,25 @@ All infrastructure passes the **CDK Nag `AwsSolutions`** rule pack:
 - API Gateway access logging + request validation.
 
 **Code-level hardening** — every high-severity finding from the static-analysis tooling (Bandit, Semgrep, Checkov, ASH) is either fixed in code or documented inline next to the relevant line. **Known production gaps** — `root` containers and base-image freshness are deliberately left for you to resolve when you fork, with compensating controls explained. Both are documented in full in [`docs/SECURITY.md`](docs/SECURITY.md).
+
+---
+
+## Operational metrics
+
+This sample reports two constants — a solution id and a release version — so AWS can count how often it is deployed and used. Both are held in [`solution-config.json`](solution-config.json), and [`solution.py`](solution.py) is the only code that reads them.
+
+| What | Where it appears | Consumed as |
+|---|---|---|
+| Solution id + name + version | The `Description` of each deployed CloudFormation stack: `(<id>) - <name>. Version <version>` | A deployment count. `Earth2UI` carries the bare id; `Earth2SageMaker` carries `(<id>-sagemaker)` so one install is not counted twice. |
+| Solution id + version | A token on the `User-Agent` header of AWS SDK calls: `AWSSOLUTION/<id>/<version>` | API usage attribution. |
+
+**Nothing about you, your account, or your data is collected.** The id and version are the same two constants for every user of this repository. No resource tags, no request contents, no account identifiers, and no forecast data are involved — the two tables above are the whole of it.
+
+**To opt out**, delete the `solution` block from `solution-config.json`. AWS SDK calls then go out unlabelled, and `cdk synth` fails with an explicit error until you supply your own `description=` in [`app.py`](app.py) — deliberately, so that opting out cannot be confused with a stack that deploys silently uncounted.
+
+**What is not covered.** `user_agent_extra` is an SDK-client setting and the AWS CLI has no equivalent — no environment variable, no shared-config key — so CLI calls are structurally unattributable. In this repository that is `aws sts get-caller-identity` in [`setup.sh`](setup.sh) and [`sagemaker_deploy/deploy-all.sh`](sagemaker_deploy/deploy-all.sh), `aws sagemaker list-endpoints` in `deploy-all.sh`, `aws ecr get-login-password` in the container buildspec, `aws cognito-idp admin-create-user` in Step 7, and every `npx cdk` invocation. The SageMaker Python SDK is handed pre-built clients for its SageMaker API calls, but the S3 clients it builds internally (for example `Session.default_bucket()`) stay outside the boundary. Nor are the custom-resource handlers that the CDK synthesizes into the stack itself — bucket auto-delete and the SPA bucket deployment — since their code is supplied by the CDK rather than by this repository. Coverage is partial by construction.
+
+**Adding an AWS call?** Build the client with `solution.get_client(...)` / `get_resource(...)` rather than `boto3.client(...)`. A bare `boto3.client()` works perfectly and is simply never attributed — nothing errors, which is exactly why it is easy to miss. Code that runs detached, with no checkout to import from ([`backend/handler.py`](backend/handler.py) in the Lambda bundle, and `sagemaker_deploy/model_code_*/inference.py` in the inference containers), instead reads the token from the `USER_AGENT_STRING` environment variable that its launcher injects. `python3 tests/test_solution.py` asserts both paths against the real outbound header.
 
 ---
 

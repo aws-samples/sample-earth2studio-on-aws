@@ -56,6 +56,11 @@ from config import (
     ENDPOINT_TIMEOUT_SECONDS,
 )
 
+# Add the repository root for solution.py, which attaches the AWS Solution
+# user-agent suffix to every client built here.
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from solution import get_client  # noqa: E402
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -152,7 +157,11 @@ def get_s3_bucket(region):
     if bucket == "your-sagemaker-bucket":
         try:
             import sagemaker
-            sess = sagemaker.Session(boto_session=boto3.Session(region_name=region))
+            boto_session = boto3.Session(region_name=region)
+            sess = sagemaker.Session(
+                boto_session=boto_session,
+                sagemaker_client=get_client("sagemaker", session=boto_session),
+            )
             bucket = sess.default_bucket()
         except Exception as e:
             # No default SageMaker bucket configured — caller must pass one explicitly.
@@ -162,7 +171,7 @@ def get_s3_bucket(region):
 
 def check_endpoint_status(endpoint_name, region):
     """Check if the endpoint is InService before invoking."""
-    sm_client = boto3.client("sagemaker", region_name=region)
+    sm_client = get_client("sagemaker", region_name=region)
 
     try:
         response = sm_client.describe_endpoint(EndpointName=endpoint_name)
@@ -212,8 +221,8 @@ def invoke_endpoint_async(endpoint_name, payload, region):
         Parsed JSON response from the endpoint
     """
     bucket = get_s3_bucket(region)
-    s3_client = boto3.client("s3", region_name=region)
-    sm_runtime = boto3.client("sagemaker-runtime", region_name=region)
+    s3_client = get_client("s3", region_name=region)
+    sm_runtime = get_client("sagemaker-runtime", region_name=region)
 
     # Generate unique request ID
     request_id = str(uuid.uuid4())[:8]

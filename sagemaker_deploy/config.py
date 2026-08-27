@@ -17,6 +17,12 @@ operations cannot proceed without these values.
 
 import logging
 import os
+import sys
+
+# solution.py lives at the repository root, one level above this package. It
+# attaches the AWS Solution user-agent suffix to every client built here.
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from solution import get_client  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
@@ -29,10 +35,8 @@ SSM_PREFIX = "/earth2/sagemaker"
 def _get_ssm_param(name: str) -> str | None:
     """Read an SSM parameter; return None on any failure."""
     try:
-        import boto3
-
         region = os.environ.get("AWS_REGION") or os.environ.get("AWS_DEFAULT_REGION")
-        ssm = boto3.client("ssm", region_name=region)
+        ssm = get_client("ssm", region_name=region)
         resp = ssm.get_parameter(Name=f"{SSM_PREFIX}/{name}")
         value = resp["Parameter"]["Value"]
         logger.debug(f"SSM {SSM_PREFIX}/{name} = {value}")
@@ -99,9 +103,7 @@ def _get_account_id() -> str:
         _AWS_ACCOUNT_ID = explicit
         return _AWS_ACCOUNT_ID
     try:
-        import boto3
-
-        _AWS_ACCOUNT_ID = boto3.client("sts").get_caller_identity()["Account"]
+        _AWS_ACCOUNT_ID = get_client("sts").get_caller_identity()["Account"]
         return _AWS_ACCOUNT_ID
     except Exception as e:
         raise RuntimeError(
